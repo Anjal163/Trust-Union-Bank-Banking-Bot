@@ -1,10 +1,9 @@
 # database/user/account_update.py
-
+from typing import Optional
 from database.core.db import run_query
-from security.audit import record_audit
 
 
-def update_contact_info(customer_id: int, new_email: str = None, new_phone: str = None):
+def update_contact_info(customer_id: int, new_email: Optional[str] = None, new_phone: Optional[str] = None) -> bool:
     updates = []
     params = []
 
@@ -21,12 +20,7 @@ def update_contact_info(customer_id: int, new_email: str = None, new_phone: str 
 
     params.append(customer_id)
 
-    q = f"UPDATE users SET {', '.join(updates)} WHERE customer_id = %s"
-    run_query(q, tuple(params), fetch=False)
-
-    record_audit("users", customer_id, "update_contact", None, {
-        "email": new_email,
-        "phone": new_phone
-    })
+    query = f"UPDATE users SET {', '.join(updates)} WHERE customer_id = %s"
+    run_query(query, tuple(params), fetch=False)
 
     return True

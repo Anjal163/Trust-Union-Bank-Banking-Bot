@@ -23,7 +23,7 @@ PUBLIC_KEY_PATH  = BASE_DIR / "config/jwt_keys/public_key.pem"
 # -----------------------------
 # DATABASE
 # -----------------------------
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("SUPABASE_DATABASE_URL")
 
 # -----------------------------
 # EMAIL

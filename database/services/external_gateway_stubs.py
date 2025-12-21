@@ -2,7 +2,6 @@
 from typing import Optional, Dict, Any
 import logging
 import uuid
-from security.audit import record_audit
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +25,6 @@ def _make_response(action: str, customer_id: Optional[int], extra: Optional[Dict
             meta[k] = v
 
     meta["stub_request_id"] = str(uuid.uuid4())
-    try:
-        record_audit("external_stub", customer_id or 0, action, performed_by, meta)
-    except Exception as e:
-        logger.exception("audit failed for external stub action=%s: %s", action, e)
 
     logger.info("external stub called action=%s customer_id=%s meta=%s", action, customer_id, meta)
     resp = dict(STANDARD_RESPONSE)
