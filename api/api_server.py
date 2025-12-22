@@ -17,21 +17,6 @@ import atexit
 from pathlib import Path
 from dotenv import load_dotenv
 
-# -------------------------------------------------
-# ENV + PATH
-# -------------------------------------------------
-
-BASE_DIR = Path(__file__).resolve().parent
-env_path = BASE_DIR / ".env"
-if env_path.exists():
-    load_dotenv(env_path)
-
-sys.path.insert(0, str(BASE_DIR))
-
-# -------------------------------------------------
-# BACKEND IMPORTS
-# -------------------------------------------------
-
 from database.core.connect import init_pool
 from auth.authentication.primary_auth import login_start, login_verify
 from auth.authentication.token_manager import token_manager
@@ -39,16 +24,17 @@ from database.user.user_db import get_user_by_customer_id, get_user_balance_from
 from database.user.branch_db import get_all_branches, get_user_accounts
 from intelligence.Sentiment_Analysis.Detect_Sentiment import get_sentiment_analyzer
 
-# -------------------------------------------------
-# LOGGING
-# -------------------------------------------------
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+env_path = PROJECT_ROOT / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+
+sys.path.insert(0, str(PROJECT_ROOT))
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("trustunionbank")
-
-# -------------------------------------------------
-# DATABASE INIT
-# -------------------------------------------------
 
 try:
     init_pool()
@@ -56,9 +42,6 @@ try:
 except Exception as e:
     logger.warning("⚠️ Database init failed: %s", e)
 
-# -------------------------------------------------
-# RASA AUTO-START
-# -------------------------------------------------
 
 RASA_PROCESS = None
 RASA_URL = os.getenv(
@@ -112,12 +95,7 @@ def stop_rasa_server():
 
 atexit.register(stop_rasa_server)
 
-# 🔥 START RASA HERE (CRITICAL)
 start_rasa_server()
-
-# -------------------------------------------------
-# APP + CORS
-# -------------------------------------------------
 
 ALLOWED_ORIGINS = [
     "http://localhost",
@@ -141,16 +119,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# -------------------------------------------------
-# CORE OBJECTS
-# -------------------------------------------------
-
 sentiment_analyzer = get_sentiment_analyzer()
-
-# -------------------------------------------------
-# REQUEST MODELS
-# -------------------------------------------------
-
 class ChatRequest(BaseModel):
     message: str
     lang: Optional[str] = "en"
@@ -162,17 +131,6 @@ class VerifyOTPRequest(BaseModel):
     customer_id: int
     otp_code: str
 
-# -------------------------------------------------
-# HEALTH
-# -------------------------------------------------
-
-@app.get("/api/health")
-async def health():
-    return {"status": "ok"}
-
-# -------------------------------------------------
-# AUTH
-# -------------------------------------------------
 
 @app.post("/api/auth/login/start")
 async def login_start_endpoint(request: LoginRequest):
@@ -188,10 +146,12 @@ async def login_verify_endpoint(request: VerifyOTPRequest):
         return result
     raise HTTPException(status_code=401, detail=result.get("reason"))
 
+
+
+
 # -------------------------------------------------
 # CHAT (RASA FULLY OWNS RESPONSE)
 # -------------------------------------------------
-
 @app.post("/api/chat")
 async def chat_endpoint(
     request: ChatRequest,
@@ -249,9 +209,6 @@ async def chat_endpoint(
             detail="Chat processing failed",
         )
 
-# -------------------------------------------------
-# USER APIs (DIRECT DB)
-# -------------------------------------------------
 
 @app.get("/api/user/profile")
 async def get_profile(authorization: str = Header(...)):
@@ -294,36 +251,41 @@ async def get_balance(authorization: str = Header(...)):
 async def branches():
     return {"branches": get_all_branches()}
 
-# -------------------------------------------------
-# FRONTEND
-# -------------------------------------------------
 
-static_dir = BASE_DIR / "frontend/static"
+static_dir = PROJECT_ROOT / "frontend/static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    index = BASE_DIR / "frontend/pages/index.html"
+    index = PROJECT_ROOT / "frontend/pages/index.html"
     if index.exists():
         return FileResponse(index)
-    return HTMLResponse("Frontend not found")
+    return HTMLResponse("Frontend not found", status_code=404)
 
-# -------------------------------------------------
-# RUN
-# -------------------------------------------------
+
 
 if __name__ == "__main__":
     import uvicorn
     import platform
-
     HOST = os.getenv("HOST", "0.0.0.0")
     PORT = int(os.getenv("PORT", 8000))
-    ENV = os.getenv("ENVIRONMENT", "development")
+    WORKERS = int(os.getenv("WORKERS", 1))
+    ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+    is_windows = platform.system().lower().startswith("win")
 
-    logger.info("🚀 Trust Union Bank API running on %s:%s", HOST, PORT)
+    print(f"\n{'='*60}")
+    print(f"🚀 Trust Union Bank API Server Starting...")
+    print(f"{'='*60}")
+    print(f"📍 Environment: {ENVIRONMENT}")
+    print(f"🌐 Server URL: http://localhost:{PORT} or http://127.0.0.1:{PORT}")
+    print(f"{'='*60}\n")
 
-    if ENV == "production" and not platform.system().lower().startswith("win"):
-        uvicorn.run(app, host=HOST, port=PORT, workers=1)
+    if ENVIRONMENT == "production":
+        if is_windows:
+            logger.warning("Running on Windows - forcing single worker to avoid child process crashes.")
+            uvicorn.run(app, host=HOST, port=PORT, log_level="info", access_log=True)
+        else:
+            uvicorn.run(app, host=HOST, port=PORT, workers=WORKERS, log_level="info", access_log=True)
     else:
         uvicorn.run(app, host=HOST, port=PORT, log_level="debug")

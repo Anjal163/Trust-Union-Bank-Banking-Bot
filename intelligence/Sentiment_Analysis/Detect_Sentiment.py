@@ -36,13 +36,8 @@ class SentimentAnalyzer:
             self.model = None
             self.tokenizer = None
 
-    # =================================================
-    # ✅ PUBLIC API (EXPECTED BY ORCHESTRATOR)
-    # =================================================
+
     def analyze(self, text: str) -> Dict[str, Any]:
-        """
-        Public method used by ResponseOrchestrator
-        """
         return self._analyze_internal(text)
 
     def _analyze_internal(self, text: str) -> Dict[str, Any]:

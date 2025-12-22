@@ -1,6 +1,15 @@
 # ======================================================
 # 🛡️ SECURITY & SECRETS (CRITICAL)
 # ======================================================
+.env
+.env.local
+.env.*
+secrets.json
+secrets.*.json
+*.pem
+*.key
+config/jwt_keys/
+config/jwt_keys/**
 
 # ======================================================
 # 🐍 PYTHON & VIRTUAL ENVIRONMENTS
