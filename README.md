@@ -43,7 +43,7 @@ git clone [https://github.com/Arkadeep01/Trust-Union-Bank-Banking-Bot.git](https
 cd Trust-Union-Bank-Banking-Bot
 2. Virtual Environment (Recommended)Bash# Windows
 python -m venv venv
-venv\Scripts\activate
+.\venv\Scripts\activate
 
 # Linux / macOS
 python3 -m venv venv
@@ -58,7 +58,7 @@ openssl genrsa -out config/jwt_keys/private_key.pem 2048
 
 # Generate public key
 openssl rsa -in config/jwt_keys/private_key.pem -pubout -out config/jwt_keys/public_key.pem
-2. Create Local Config FilesCreate these files in the config/ directory (they are ignored by Git):config/secrets.jsonJSON{
+2. Create Local Config FilesCreate these files in the config/ directory:File: config/secrets.jsonJSON{
   "jwt": {
     "algorithm": "RS256",
     "access_token_exp_minutes": 15,
@@ -70,12 +70,12 @@ openssl rsa -in config/jwt_keys/private_key.pem -pubout -out config/jwt_keys/pub
     "max_otp_attempts": 3
   }
 }
-config/models.jsonJSON{
+File: config/models.jsonJSON{
   "sentiment_model": "distilbert-base-uncased",
   "intent_threshold": 0.65
 }
-🗄️ Database SetupCreate a PostgreSQL database.Execute the SQL files in this order:schema.sqlschema_indexes.sql🤖 Training & ExecutionTrain the Rasa ModelRasa models are not stored in GitHub. You must train them locally:Bashcd rasa
+🗄️ Database SetupCreate a PostgreSQL database and execute the SQL files in this order:schema.sqlschema_indexes.sql🤖 Training & ExecutionTrain the Rasa ModelRasa models are not stored in GitHub. You must train them locally:Bashcd rasa
 rasa train
 cd ..
 Run the ApplicationFrom the project root:Bashpython -m api.api_server
-Health Check: GET http://localhost:8000/api/healthFrontend: Open http://localhost:8000 in your browser.🛠️ TroubleshootingIssueSolutionRasa not foundRun pip install rasa inside your venv.ModuleNotFoundErrorEnsure you run the server from the root directory.JWT ErrorsVerify that private_key.pem exists in config/jwt_keys/.DB Connection RefusedCheck your .env credentials and Postgres status.🔒 Security NoticeThe following items are strictly ignored by .gitignore to ensure security:.env & .env.localconfig/jwt_keys/*.pemrasa/models/*.tar.gzconfig/secrets.json
+🛠️ TroubleshootingIssueSolutionRasa not foundRun pip install rasa inside your venv.ModuleNotFoundErrorEnsure you run the server from the root directory.JWT ErrorsVerify that private_key.pem exists in config/jwt_keys/.DB Connection RefusedCheck your .env credentials and Postgres status.🔒 Security NoticeThe following items are strictly ignored by .gitignore to ensure security:.env & .env.localconfig/jwt_keys/*.pemrasa/models/*.tar.gzconfig/secrets.jsonconfig/models.json
